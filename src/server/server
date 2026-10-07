@@ -1,0 +1,26 @@
+import cors from "cors";
+import express from "express";
+
+const app = express();
+
+const allowedOrigins = [
+  process.env.CORS_ORIGIN,
+  process.env.ALLOWED_ORIGINS,
+  "http://localhost:5173",
+].filter(Boolean) as string[];
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (e.g. mobile apps, curl) or matched origin
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Blocked by CORS policy"));
+      }
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+  })
+);
