@@ -1,15 +1,36 @@
-export async function apiFetch(endpoint: string, options: RequestInit = {}) {
+export class ApiError extends Error {
+  status: number;
+  constructor(message: string, status: number) {
+    super(message);
+    this.status = status;
+    this.name = 'ApiError';
+  }
+}
+
+export function setToken(token: string | null) {
+  if (token) {
+    localStorage.setItem('token', token);
+  } else {
+    localStorage.removeItem('token');
+  }
+}
+
+export function authHeaders(): Record<string, string> {
   const token = localStorage.getItem('token');
-  
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+async function request(endpoint: string, method: string = 'GET', body?: any) {
+  const token = localStorage.getItem('token');
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    ...(options.headers as Record<string, string> || {}),
   };
 
   const response = await fetch(`/api${endpoint}`, {
-    ...options,
+    method,
     headers,
+    body: body !== undefined ? JSON.stringify(body) : undefined,
   });
 
   const contentType = response.headers.get('content-type');
@@ -28,8 +49,17 @@ export async function apiFetch(endpoint: string, options: RequestInit = {}) {
   }
 
   if (!response.ok) {
-    throw new Error(data.error || `HTTP error! status: ${response.status}`);
+    throw new ApiError(data.error || `Request failed (${response.status})`, response.status);
   }
 
   return data;
 }
+
+export async function api(endpoint: string, method: string = 'GET', body?: any) {
+  return request(endpoint, method, body);
+}
+
+api.get = (endpoint: string) => request(endpoint, 'GET');
+api.post = (endpoint: string, body?: any) => request(endpoint, 'POST', body);
+api.put = (endpoint: string, body?: any) => request(endpoint, 'PUT', body);
+api.delete = (endpoint: string) => request(endpoint, 'DELETE');
