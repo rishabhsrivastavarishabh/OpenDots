@@ -153,10 +153,11 @@ export function App() {
     }
   }, []);
   useEffect(() => {
+    if (needsAuth) return;
     void refresh();
     const timer = setInterval(() => void refresh(), 3000);
     return () => clearInterval(timer);
-  }, [refresh]);
+  }, [refresh, needsAuth]);
   useEffect(() => {
     setCapture(undefined);
     if (!selectedThread) return;
