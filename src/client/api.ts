@@ -45,7 +45,12 @@ async function request(endpoint: string, method: string = 'GET', body?: any) {
 
   if (response.status === 401) {
     localStorage.removeItem('token');
-    window.location.reload();
+    
+    // Prevent continuous infinite reload loops if already on login view/root
+    if (window.location.pathname !== '/' && !window.location.search.includes('unauthorized')) {
+      window.location.href = '/?unauthorized=true';
+    }
+    return data;
   }
 
   if (!response.ok) {
